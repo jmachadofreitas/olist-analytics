@@ -7,6 +7,7 @@ requires-python = ">=3.12,<3.14"
 dependencies = [
     "duckdb",
     "kaggle>=2.2.3",
+    "typer",
 ]
 
 [dependency-groups]
