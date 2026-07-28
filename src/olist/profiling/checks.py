@@ -60,3 +60,57 @@ def _not_null(
         query=f"SELECT count_if({predicate}), count(*) FROM {table}",
         requirements={(table_name, column) for column in columns},
     )
+
+
+def _unique(
+    table_name: str,
+    columns: tuple[str, ...],
+) -> CheckSpec:
+    """Check a candidate key for duplicate rows."""
+    table = f"raw.{quote_identifier(table_name)}"
+    keys = ", ".join(quote_identifier(column) for column in columns)
+    label = "_and_".join(columns)
+    return CheckSpec(
+        name=f"{table_name}_{label}_unique",
+        category=CheckCategory.UNIQUENESS,
+        description=f"The candidate grain of raw.{table_name} should be unique.",
+        query=f"""--sql
+            WITH duplicate_keys AS (
+                SELECT count(*) AS occurrences
+                FROM {table}
+                GROUP BY {keys}
+                HAVING count(*) > 1
+            )
+            SELECT
+                coalesce(sum(occurrences - 1), 0)::BIGINT,
+                (SELECT count(*) FROM {table})
+            FROM duplicate_keys
+        """,
+        requirements={(table_name, column) for column in columns},
+    )
+
+def _key_checks() -> list[CheckSpec]:
+    """Build and return checks that validate the candidate source keys of each raw table."""
+    candidates = [
+        ("customers", ("customer_id",)),
+        ("orders", ("order_id",)),
+        ("products", ("product_id",)),
+        ("sellers", ("seller_id",)),
+        ("marketing_qualified_leads", ("mql_id",)),
+        ("closed_deals", ("mql_id",)),
+        ("order_items", ("order_id", "order_item_id")),
+        ("order_payments", ("order_id", "payment_sequential")),
+        (
+            "product_category_name_translation",
+            ("product_category_name",),
+        ),
+    ]
+    return [
+        check
+        for table_name, columns in candidates
+        for check in (
+            _not_null(table_name, columns),
+            _unique(table_name, columns),
+        )
+    ]
+
