@@ -1,11 +1,14 @@
+"""Coordinate source profiling and persist its audit results."""
+
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
 import duckdb
 
-from olist.paths import WAREHOUSE_PATH
+from olist.paths import PROFILING_REPORT_PATH, WAREHOUSE_PATH
 from olist.profiling.checks import run_checks
+from olist.profiling.reporting import render_markdown_report
 from olist.profiling.stats import collect_source_statistics, measure_type_compatibility
 from olist.warehouse import connect
 
@@ -15,6 +18,7 @@ class ProfilingResult:
     """Summarize a completed profiling run for CLI and orchestration callers."""
 
     run_id: str
+    report_path: Path
     table_count: int
     failed_check_count: int
 
@@ -105,6 +109,7 @@ def _ensure_raw_schema(connection: duckdb.DuckDBPyConnection) -> None:
 
 def profile_raw_sources(
     warehouse_path: Path = WAREHOUSE_PATH,
+    report_path: Path = PROFILING_REPORT_PATH,
 ) -> ProfilingResult:
     """Profile the raw schema and persist a historical audit run."""
 
@@ -143,6 +148,7 @@ def profile_raw_sources(
             """,
             [run_id],
         )
+        render_markdown_report(connection, run_id, report_path)
 
         table_count = connection.execute(
             "SELECT count(*) FROM audit.table_profiles WHERE run_id = ?",
@@ -159,6 +165,7 @@ def profile_raw_sources(
         assert table_count is not None and failed_check_count is not None
         return ProfilingResult(
             run_id=run_id,
+            report_path=report_path,
             table_count=table_count[0],
             failed_check_count=failed_check_count[0],
         )
