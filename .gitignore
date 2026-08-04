@@ -3,6 +3,11 @@
 !data/raw/.gitkeep
 !data/warehouse/.gitkeep
 
+dbt/**/target/
+dbt/**/logs/
+dbt/**/dbt_packages/
+.user.yml
+
 # OS
 .DS_Store
 
