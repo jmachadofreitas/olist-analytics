@@ -12,3 +12,34 @@ models:
       - name: customer_unique_id
         description: Identity key that can group several order-specific customer records.
 
+  - name: stg_orders
+    description: One order with typed lifecycle timestamps.
+    columns:
+      - name: order_id
+        description: Source order key.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Order-specific customer key.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: order_status
+        description: Lifecycle state supplied by Olist.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - approved
+                  - canceled
+                  - created
+                  - delivered
+                  - invoiced
+                  - processing
+                  - shipped
+                  - unavailable
