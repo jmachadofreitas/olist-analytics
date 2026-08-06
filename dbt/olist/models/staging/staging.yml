@@ -2,26 +2,29 @@ version: 2
 
 models:
   - name: stg_customers
-    description: One order-specific customer record per customer_id.
+    description: >-
+      Keeps the source columns unchanged. Grain: one customer record per customer_id.
     columns:
       - name: customer_id
-        description: Source key used by orders.
+        description: Customer ID used on an order.
         data_tests:
           - not_null
           - unique
       - name: customer_unique_id
-        description: Identity key that can group several order-specific customer records.
+        description: Customer ID shared across orders.
 
   - name: stg_orders
-    description: One order with typed lifecycle timestamps.
+    description: >-
+      Renames the order timestamps and casts them from text to timestamps. Grain: one order
+      per order_id.
     columns:
       - name: order_id
-        description: Source order key.
+        description: Order ID.
         data_tests:
           - not_null
           - unique
       - name: customer_id
-        description: Order-specific customer key.
+        description: Customer ID used on the order.
         data_tests:
           - not_null
           - relationships:
@@ -29,7 +32,7 @@ models:
                 to: ref('stg_customers')
                 field: customer_id
       - name: order_status
-        description: Lifecycle state supplied by Olist.
+        description: Order status.
         data_tests:
           - not_null
           - accepted_values:

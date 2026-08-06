@@ -2,14 +2,17 @@ version: 2
 
 sources:
   - name: olist_raw
-    description: Olist raw data.
+    description: Raw tables loaded from the Olist e-commerce dataset.
     schema: raw
     tables:
       - name: customers
         description: >-
-          Order-specific customer records containing an anonymized customer identity and
-          location.
+          Customer IDs and location fields for the customer record attached to each order.
       - name: orders
         description: >-
-          Marketplace orders with their customer, lifecycle status, purchase, approval,
-          shipment, and delivery timestamps.
+          Orders with their customer ID, status, and purchase, approval, shipping, and
+          delivery timestamps.
+      - name: order_items
+        description: >-
+          Items in each order, including product, seller, price, freight, and shipping
+          deadline.
