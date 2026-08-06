@@ -46,3 +46,26 @@ models:
                   - processing
                   - shipped
                   - unavailable
+
+  - name: stg_order_items
+    description: >-
+      Renames shipping_limit_date to shipping_limit_at, casts order_item_id to integer, casts
+      the shipping deadline to timestamp, and casts price and freight to decimal. Grain: one
+      row per order_id and order_item_id pair.
+    columns:
+      - name: order_id
+        description: Order ID.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+      - name: order_item_id
+        description: Item number within the order.
+        data_tests:
+          - not_null
+      - name: price
+        description: Item price.
+      - name: freight_value
+        description: Freight charge for the item.
