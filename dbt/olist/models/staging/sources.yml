@@ -16,3 +16,6 @@ sources:
         description: >-
           Items in each order, including product, seller, price, freight, and shipping
           deadline.
+      - name: order_payments
+        description: >-
+          Payments for each order, including payment number, method, installments, and amount.

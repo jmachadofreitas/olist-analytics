@@ -69,3 +69,42 @@ models:
         description: Item price.
       - name: freight_value
         description: Freight charge for the item.
+
+  - name: stg_order_payments
+    description: >-
+      Casts payment_sequential and payment_installments to integer and payment_value to
+      decimal. Grain: one row per order_id and payment_sequential pair.
+    columns:
+      - name: order_id
+        description: Order ID.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+      - name: payment_sequential
+        description: Payment number within the order.
+        data_tests:
+          - not_null
+      - name: payment_type
+        description: Payment method.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - boleto
+                  - credit_card
+                  - debit_card
+                  - not_defined
+                  - voucher
+      - name: payment_installments
+        description: Number of installments.
+        data_tests:
+          - not_null
+      - name: payment_value
+        description: Payment amount.
+        data_tests:
+          - not_null
+
