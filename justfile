@@ -10,8 +10,11 @@ ingest:
 profile:
     uv run python -m olist profile
 
-dbt:
-    uv run dbt build --project-dir dbt/olist --profiles-dir dbt/olist
+dbt model="":
+    uv run dbt build --project-dir dbt/olist --profiles-dir dbt/olist {{ if model == "" { "" } else { "--select " + quote(model) } }}
+
+dbt-test model="":
+    uv run dbt test --project-dir dbt/olist --profiles-dir dbt/olist {{ if model == "" { "" } else { "--select " + quote(model) } }}
 
 dbt-debug:
     uv run dbt debug --project-dir dbt/olist --profiles-dir dbt/olist
