@@ -108,3 +108,45 @@ models:
         data_tests:
           - not_null
 
+  - name: stg_order_reviews
+    description: >-
+      Renames review_creation_date to review_request_date and casts it to date. Renames
+      review_answer_timestamp to review_answered_at and casts it to timestamp. Casts
+      review_score to integer. Grain: one row per review_id and order_id pair.
+    columns:
+      - name: review_id
+        description: Review ID.
+        data_tests:
+          - not_null
+      - name: order_id
+        description: Order ID.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+      - name: review_score
+        description: Score from 1 (lowest) to 5 (highest).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 1
+                  - 2
+                  - 3
+                  - 4
+                  - 5
+      - name: review_comment_title
+        description: Review title.
+      - name: review_comment_message
+        description: Review comment.
+      - name: review_request_date
+        description: Date Olist requested the customer review.
+        data_tests:
+          - not_null
+      - name: review_answered_at
+        description: Date and time the customer submitted the review.
+        data_tests:
+          - not_null

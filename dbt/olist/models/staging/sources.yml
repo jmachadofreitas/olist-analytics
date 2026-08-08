@@ -19,3 +19,6 @@ sources:
       - name: order_payments
         description: >-
           Payments for each order, including payment number, method, installments, and amount.
+      - name: order_reviews
+        description: >-
+          Customer reviews for orders, including score, optional comments, and survey dates.
