@@ -65,6 +65,14 @@ models:
         description: Item number within the order.
         data_tests:
           - not_null
+      - name: product_id
+        description: Product ID.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_products')
+                field: product_id
       - name: price
         description: Item price.
       - name: freight_value
@@ -150,3 +158,31 @@ models:
         description: Date and time the customer submitted the review.
         data_tests:
           - not_null
+  - name: stg_products
+    description: >-
+      Renames product_name_lenght and product_description_lenght to correct their spelling.
+      Casts text lengths, photo count, weight, and dimensions to numeric types. Grain: one
+      row per product_id.
+    columns:
+      - name: product_id
+        description: Product ID.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_category_name
+        description: Product category in Portuguese.
+      - name: product_name_length
+        description: Number of characters in the product name.
+      - name: product_description_length
+        description: Number of characters in the product description.
+      - name: product_photo_count
+        description: Number of product photos.
+      - name: product_weight_g
+        description: Product weight in grams.
+      - name: product_length_cm
+        description: Product length in centimetres.
+      - name: product_height_cm
+        description: Product height in centimetres.
+      - name: product_width_cm
+        description: Product width in centimetres.
+

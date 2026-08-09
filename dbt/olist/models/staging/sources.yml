@@ -22,3 +22,6 @@ sources:
       - name: order_reviews
         description: >-
           Customer reviews for orders, including score, optional comments, and survey dates.
+      - name: products
+        description: >-
+          Products with category, text lengths, photo count, weight, and dimensions.
