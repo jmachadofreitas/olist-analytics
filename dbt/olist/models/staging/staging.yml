@@ -73,6 +73,14 @@ models:
               arguments:
                 to: ref('stg_products')
                 field: product_id
+      - name: seller_id
+        description: Seller ID.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_sellers')
+                field: seller_id
       - name: price
         description: Item price.
       - name: freight_value
@@ -185,4 +193,20 @@ models:
         description: Product height in centimetres.
       - name: product_width_cm
         description: Product width in centimetres.
+
+  - name: stg_sellers
+    description: >-
+      Keeps the source columns unchanged. Grain: one row per seller_id.
+    columns:
+      - name: seller_id
+        description: Seller ID.
+        data_tests:
+          - not_null
+          - unique
+      - name: seller_zip_code_prefix
+        description: Seller postal code prefix.
+      - name: seller_city
+        description: Seller city.
+      - name: seller_state
+        description: Seller state abbreviation.
 

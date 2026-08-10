@@ -25,3 +25,7 @@ sources:
       - name: products
         description: >-
           Products with category, text lengths, photo count, weight, and dimensions.
+      - name: sellers
+        description: Sellers with postal code, city, and state.
+      - name: product_category_name_translation
+        description: Portuguese product category names with their English translations.
