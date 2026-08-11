@@ -166,6 +166,7 @@ models:
         description: Date and time the customer submitted the review.
         data_tests:
           - not_null
+
   - name: stg_products
     description: >-
       Renames product_name_lenght and product_description_lenght to correct their spelling.
@@ -210,3 +211,16 @@ models:
       - name: seller_state
         description: Seller state abbreviation.
 
+  - name: stg_product_category_name_translation
+    description: >-
+      Keeps the source columns unchanged. Grain: one row per product_category_name.
+    columns:
+      - name: product_category_name
+        description: Product category in Portuguese.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_category_name_english
+        description: Product category in English.
+        data_tests:
+          - not_null
