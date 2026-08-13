@@ -224,3 +224,27 @@ models:
         description: Product category in English.
         data_tests:
           - not_null
+
+  - name: stg_geolocation
+    description: >-
+      Casts latitude and longitude from text to double. Each row is a published location
+      observation for a postal code prefix. Postal code prefixes and identical observations
+      may appear more than once.
+    columns:
+      - name: geolocation_zip_code_prefix
+        description: Postal code prefix.
+        data_tests:
+          - not_null
+      - name: geolocation_lat
+        description: Latitude.
+        data_tests:
+          - not_null
+      - name: geolocation_lng
+        description: Longitude.
+        data_tests:
+          - not_null
+      - name: geolocation_city
+        description: City.
+      - name: geolocation_state
+        description: State abbreviation.
+

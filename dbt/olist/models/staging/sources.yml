@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: olist_raw
-    description: Raw tables loaded from the Olist e-commerce dataset.
+    description: Raw tables loaded from the Olist e-commerce and marketing funnel datasets.
     schema: raw
     tables:
       - name: customers
@@ -21,7 +21,8 @@ sources:
           Payments for each order, including payment number, method, installments, and amount.
       - name: order_reviews
         description: >-
-          Customer reviews for orders, including score, optional comments, and survey dates.
+          Customer reviews for orders, including score, optional comments, and request and
+          answer dates.
       - name: products
         description: >-
           Products with category, text lengths, photo count, weight, and dimensions.
@@ -29,3 +30,6 @@ sources:
         description: Sellers with postal code, city, and state.
       - name: product_category_name_translation
         description: Portuguese product category names with their English translations.
+      - name: geolocation
+        description: >-
+          Latitude, longitude, city, and state observations for postal code prefixes.
