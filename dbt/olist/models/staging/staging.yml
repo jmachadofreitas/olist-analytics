@@ -3,7 +3,8 @@ version: 2
 models:
   - name: stg_customers
     description: >-
-      Keeps the source columns unchanged. Grain: one customer record per customer_id.
+      Keeps the source columns unchanged.
+      Grain: one customer record per customer_id.
     columns:
       - name: customer_id
         description: Customer ID used on an order.
@@ -15,8 +16,8 @@ models:
 
   - name: stg_orders
     description: >-
-      Renames the order timestamps and casts them from text to timestamps. Grain: one order
-      per order_id.
+      Renames the order timestamps and casts them from text to timestamps.
+      Grain: one order per order_id.
     columns:
       - name: order_id
         description: Order ID.
@@ -50,8 +51,8 @@ models:
   - name: stg_order_items
     description: >-
       Renames shipping_limit_date to shipping_limit_at, casts order_item_id to integer, casts
-      the shipping deadline to timestamp, and casts price and freight to decimal. Grain: one
-      row per order_id and order_item_id pair.
+      the shipping deadline to timestamp, and casts price and freight to decimal. 
+      Grain: one row per order_id and order_item_id pair.
     columns:
       - name: order_id
         description: Order ID.
@@ -89,7 +90,8 @@ models:
   - name: stg_order_payments
     description: >-
       Casts payment_sequential and payment_installments to integer and payment_value to
-      decimal. Grain: one row per order_id and payment_sequential pair.
+      decimal.
+      Grain: one row per order_id and payment_sequential pair.
     columns:
       - name: order_id
         description: Order ID.
@@ -128,7 +130,8 @@ models:
     description: >-
       Renames review_creation_date to review_request_date and casts it to date. Renames
       review_answer_timestamp to review_answered_at and casts it to timestamp. Casts
-      review_score to integer. Grain: one row per review_id and order_id pair.
+      review_score to integer.
+      Grain: one row per review_id and order_id pair.
     columns:
       - name: review_id
         description: Review ID.
@@ -170,8 +173,8 @@ models:
   - name: stg_products
     description: >-
       Renames product_name_lenght and product_description_lenght to correct their spelling.
-      Casts text lengths, photo count, weight, and dimensions to numeric types. Grain: one
-      row per product_id.
+      Casts text lengths, photo count, weight, and dimensions to numeric types. 
+      Grain: one row per product_id.
     columns:
       - name: product_id
         description: Product ID.
@@ -197,7 +200,8 @@ models:
 
   - name: stg_sellers
     description: >-
-      Keeps the source columns unchanged. Grain: one row per seller_id.
+      Keeps the source columns unchanged.
+      Grain: one row per seller_id.
     columns:
       - name: seller_id
         description: Seller ID.
@@ -213,7 +217,8 @@ models:
 
   - name: stg_product_category_name_translation
     description: >-
-      Keeps the source columns unchanged. Grain: one row per product_category_name.
+      Keeps the source columns unchanged.
+      Grain: one row per product_category_name.
     columns:
       - name: product_category_name
         description: Product category in Portuguese.
@@ -248,3 +253,69 @@ models:
       - name: geolocation_state
         description: State abbreviation.
 
+  - name: stg_marketing_qualified_leads
+    description: >-
+      Casts first_contact_date from text to date.
+      Grain: one marketing-qualified lead per mql_id.
+    columns:
+      - name: mql_id
+        description: Marketing-qualified lead ID.
+        data_tests:
+          - not_null
+          - unique
+      - name: first_contact_date
+        description: Date the lead first contacted Olist.
+        data_tests:
+          - not_null
+      - name: landing_page_id
+        description: Landing page ID associated with the lead.
+        data_tests:
+          - not_null
+      - name: origin
+        description: Channel through which the lead reached Olist.
+
+  - name: stg_closed_deals
+    description: >-
+      Renames won_date to won_at and casts it to timestamp. Casts company and GTIN flags to
+      boolean, catalog size to integer, and declared monthly revenue to decimal.
+      Grain: one closed deal per mql_id.
+    columns:
+      - name: mql_id
+        description: Marketing-qualified lead ID.
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('stg_marketing_qualified_leads')
+                field: mql_id
+      - name: seller_id
+        description: Seller ID assigned to the closed deal.
+        data_tests:
+          - not_null
+      - name: sdr_id
+        description: Sales development representative ID.
+      - name: sr_id
+        description: Sales representative ID.
+      - name: won_at
+        description: Date and time the deal was marked as won.
+        data_tests:
+          - not_null
+      - name: business_segment
+        description: Seller business segment.
+      - name: lead_type
+        description: Lead type.
+      - name: lead_behaviour_profile
+        description: Lead behaviour profile.
+      - name: has_company
+        description: Whether the seller reported having a company.
+      - name: has_gtin
+        description: Whether the seller reported using product GTINs.
+      - name: average_stock
+        description: Reported stock range.
+      - name: business_type
+        description: Seller business type.
+      - name: declared_product_catalog_size
+        description: Number of products reported in the seller catalog.
+      - name: declared_monthly_revenue
+        description: Monthly revenue reported by the seller.

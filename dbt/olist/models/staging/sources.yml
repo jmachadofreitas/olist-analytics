@@ -33,3 +33,10 @@ sources:
       - name: geolocation
         description: >-
           Latitude, longitude, city, and state observations for postal code prefixes.
+      - name: marketing_qualified_leads
+        description: >-
+          Seller leads with their first contact date, landing page, and acquisition channel.
+      - name: closed_deals
+        description: >-
+          Seller leads that became closed deals, including sales assignments and reported
+          business attributes.
