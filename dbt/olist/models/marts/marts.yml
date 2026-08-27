@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: >-
+      One row per order. Contains the order lifecycle timestamps and customer identity
+      needed for order, delivery, and customer analysis.
+
+    columns:
+      - name: order_id
+        description: Unique identifier for an order.
+        data_tests:
+          - not_null
+          - unique
+      
+      - name: customer_id
+        description: Identifier for the order-specific customer record.
+        data_tests:
+          - not_null
+      
+      - name: customer_unique_id
+        description: Identifier shared by orders belonging to the same customer id.
+        data_tests:
+          - not_null
+
+      - name: order_status
+        description: Current lifecycle status of the order.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - approved
+                  - canceled
+                  - created
+                  - delivered
+                  - invoiced
+                  - processing
+                  - shipped
+                  - unavailable
+                  
+      - name: purchased_at
+        description: Date and time the customer placed the order.
+
+      - name: approved_at
+        description: Date and time the payment for the order was approved.
+
+      - name: delivered_to_carrier_at
+        description: Date and time the seller handed the order to the carrier.
+
+      - name: delivered_to_customer_at
+        description: Date and time the carrier delivered the order to customer.
+
+      - name: estimated_delivery_at
+        description: Date and time estimate for order to be delivered.
+        data_tests:
+          - not_null
