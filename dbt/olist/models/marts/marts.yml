@@ -12,12 +12,12 @@ models:
         data_tests:
           - not_null
           - unique
-      
+
       - name: customer_id
         description: Identifier for the order-specific customer record.
         data_tests:
           - not_null
-      
+
       - name: customer_unique_id
         description: Identifier shared by orders belonging to the same customer id.
         data_tests:
@@ -38,7 +38,7 @@ models:
                   - processing
                   - shipped
                   - unavailable
-                  
+
       - name: purchased_at
         description: Date and time the customer placed the order.
 
