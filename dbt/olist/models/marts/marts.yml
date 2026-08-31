@@ -55,3 +55,321 @@ models:
         description: Date and time estimate for order to be delivered.
         data_tests:
           - not_null
+
+  - name: fct_delivery_performance
+    description: >-
+      One row per eligible delivered order for delivery-performance analysis. Eligible orders
+      have delivered status and populated actual and estimated delivery timestamps. On-time
+      delivery compares calendar dates because the estimate represents a promised day rather
+      than a precise time-of-day deadline.
+
+    columns:
+      - name: order_id
+        description: Unique identifier for an eligible delivered order.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: Identifier for the order-specific customer record.
+        data_tests:
+          - not_null
+
+      - name: order_status
+        description: Lifecycle status of the order; always delivered in this model.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - delivered
+
+      - name: purchased_at
+        description: Date and time the customer placed the order.
+        data_tests:
+          - not_null
+
+      - name: delivered_to_customer_at
+        description: Date and time the carrier delivered the order to the customer.
+        data_tests:
+          - not_null
+
+      - name: estimated_delivery_at
+        description: Date and time Olist estimated the order would be delivered.
+        data_tests:
+          - not_null
+
+      - name: delivered_to_customer_date
+        description: Calendar date on which the carrier delivered the order.
+        data_tests:
+          - not_null
+
+      - name: estimated_delivery_date
+        description: Calendar date on which Olist estimated the order would be delivered.
+        data_tests:
+          - not_null
+
+      - name: delivery_difference_days
+        description: >-
+          Actual delivery date minus estimated delivery date in days. Negative values are
+          early, zero is on the estimated date, and positive values are late.
+        data_tests:
+          - not_null
+
+      - name: is_on_time
+        description: Whether delivery occurred on or before the estimated delivery date.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+  - name: agg_delivery_performance_monthly
+    description: >-
+      One row per purchase month. Provides reusable delivery-performance counts, the on-time
+      delivery rate, and average delivery date difference for notebooks, reports, and BI tools.
+
+    columns:
+      - name: purchase_month
+        description: First calendar date of the month in which eligible orders were purchased.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: eligible_delivered_orders
+        description: Number of eligible delivered orders purchased during the month.
+        data_tests:
+          - not_null
+
+      - name: on_time_orders
+        description: Number of eligible orders delivered on or before the estimated date.
+        data_tests:
+          - not_null
+
+      - name: on_time_delivery_rate_pct
+        description: Percentage of eligible delivered orders that were delivered on time.
+        data_tests:
+          - not_null
+
+      - name: average_delivery_difference_days
+        description: Average actual delivery date minus estimated delivery date, in days.
+        data_tests:
+          - not_null
+
+  - name: agg_delivery_difference_monthly_comparison
+    description: >-
+      One row per purchase year and month for the latest two complete years. Monthly
+      distribution statistics for box plots and letter-value plots.
+
+    columns:
+      - name: purchase_year
+        description: Calendar purchase year represented by the monthly distribution statistics.
+        data_tests:
+          - not_null
+
+      - name: purchase_month_number
+        description: Calendar month number used to order the paired monthly distributions.
+        data_tests:
+          - not_null
+
+      - name: purchase_month_name
+        description: Abbreviated calendar month name displayed by presentation tools.
+        data_tests:
+          - not_null
+
+      - name: comparison_period
+        description: Labels the latest year as current and the preceding year as previous.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Current year
+                  - Previous year
+
+      - name: eligible_delivered_orders
+        description: Number of eligible delivered orders included in the distribution.
+        data_tests:
+          - not_null
+
+      - name: average_delivery_difference_days
+        description: Mean delivery date difference for the year and month, in days.
+        data_tests:
+          - not_null
+
+      - name: p01_delivery_difference_days
+        description: First percentile of delivery date difference, in days.
+        data_tests:
+          - not_null
+
+      - name: p05_delivery_difference_days
+        description: Fifth percentile of delivery date difference, in days.
+        data_tests:
+          - not_null
+
+      - name: p12_5_delivery_difference_days
+        description: 12.5th percentile of delivery date difference, in days.
+        data_tests:
+          - not_null
+
+      - name: lower_whisker_delivery_difference_days
+        description: Lowest observed value within 1.5 times the interquartile range.
+        data_tests:
+          - not_null
+
+      - name: first_quartile_delivery_difference_days
+        description: Twenty-fifth percentile of delivery date difference, in days.
+        data_tests:
+          - not_null
+
+      - name: median_delivery_difference_days
+        description: Median delivery date difference, in days.
+        data_tests:
+          - not_null
+
+      - name: third_quartile_delivery_difference_days
+        description: Seventy-fifth percentile of delivery date difference, in days.
+        data_tests:
+          - not_null
+
+      - name: upper_whisker_delivery_difference_days
+        description: Highest observed value within 1.5 times the interquartile range.
+        data_tests:
+          - not_null
+
+      - name: p87_5_delivery_difference_days
+        description: 87.5th percentile of delivery date difference, in days.
+        data_tests:
+          - not_null
+
+      - name: p95_delivery_difference_days
+        description: Ninety-fifth percentile of delivery date difference, in days.
+        data_tests:
+          - not_null
+
+      - name: p99_delivery_difference_days
+        description: Ninety-ninth percentile of delivery date difference, in days.
+        data_tests:
+          - not_null
+
+  - name: fct_delivery_difference_outliers
+    description: >-
+      One row per eligible delivered order that falls outside either the monthly Tukey
+      whiskers or the monthly P01-P99 interval for the latest two-year completed-month
+      comparison window. This table owns point-level outlier and extreme classification;
+      the monthly aggregate owns only the distribution boundaries.
+
+    columns:
+      - name: order_id
+        description: Unique identifier for the outlier or extreme order.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: Identifier for the order-specific customer record.
+        data_tests:
+          - not_null
+
+      - name: purchased_at
+        description: Date and time the customer placed the order.
+        data_tests:
+          - not_null
+
+      - name: purchase_year
+        description: Calendar purchase year represented by the monthly distribution statistics.
+        data_tests:
+          - not_null
+
+      - name: purchase_month_number
+        description: Calendar month number used to order the paired monthly distributions.
+        data_tests:
+          - not_null
+
+      - name: purchase_month_name
+        description: Abbreviated calendar month name displayed by presentation tools.
+        data_tests:
+          - not_null
+
+      - name: comparison_period
+        description: Labels the latest year as current and the preceding year as previous.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Current year
+                  - Previous year
+
+      - name: delivery_difference_days
+        description: >-
+          Actual delivery date minus estimated delivery date in days. Negative values are
+          early, zero is on the estimated date, and positive values are late.
+        data_tests:
+          - not_null
+
+      - name: is_tukey_outlier
+        description: Whether the order is outside the monthly 1.5-IQR whisker bounds.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_lower_tukey_outlier
+        description: Whether the order is below the monthly lower 1.5-IQR whisker.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_upper_tukey_outlier
+        description: Whether the order is above the monthly upper 1.5-IQR whisker.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_p01_p99_extreme
+        description: >-
+          Whether the order is outside the monthly P01-P99 interval used by the
+          letter-value plot.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_lower_p01_p99_extreme
+        description: >-
+          Whether the order is below the monthly first-percentile boundary.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_upper_p01_p99_extreme
+        description: >-
+          Whether the order is above the monthly ninety-ninth-percentile boundary.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false

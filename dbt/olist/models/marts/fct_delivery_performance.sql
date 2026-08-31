@@ -1,4 +1,4 @@
--- Delivery KPIs require a completed delivery and both sides of the date comparison.
+-- Select completed deliveries with both timestamps required by the performance metrics.
 with eligible_orders as (
     select
         order_id,
@@ -16,7 +16,7 @@ with eligible_orders as (
         and estimated_delivery_at is not null
 )
 
--- delivery_difference_days: Negative values are early, zero is on time, and positive values are late.
+-- Add calendar-day delivery difference and the derived on-time indicator to each eligible order.
 select
     order_id,
     customer_id,
