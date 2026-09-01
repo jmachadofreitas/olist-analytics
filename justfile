@@ -1,6 +1,12 @@
 default:
     @just --list
 
+activate:
+    #!/usr/bin/env bash
+    uv sync
+    source .venv/bin/activate
+    export VIRTUAL_ENV_PROMPT=olist
+    exec bash -i
 download:
     ./scripts/download_data.sh
 
@@ -22,7 +28,13 @@ dbt-debug:
 lint:
     uv run ruff check .
 
+sqlfluff:
+    uv run sqlfluff lint dbt
+
+typecheck:
+    uv run basedpyright
+
 test:
     uv run pytest
 
-check: lint test
+check: lint sqlfluff typecheck test

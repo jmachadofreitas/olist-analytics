@@ -5,14 +5,20 @@ description = "Analytics platform using DuckDB, dbt, and Dagster."
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-    "dbt-duckdb",
-    "duckdb",
+    "dbt-duckdb>=1.10.1",
+    "duckdb>=1.5.4",
     "kaggle>=2.2.3",
-    "typer",
+    "typer>=0.26.8",
 ]
 
 [dependency-groups]
-dev = ["ipykernel", "pytest", "ruff"]
+dev = [
+    "basedpyright>=1.39.10",
+    "ipykernel>=7.3.0",
+    "pytest>=8.4.2",
+    "ruff>=0.15.21",
+    "sqlfluff>=4.3.0",
+]
 
 [build-system]
 requires = ["hatchling"]
