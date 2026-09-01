@@ -3,7 +3,7 @@ from pathlib import Path
 import duckdb
 import pytest
 
-from olist.profiling import ProfilingResult, profile_raw_sources
+from olist.validation import ProfilingResult, profile_raw_sources
 
 
 def _create_profile_sources(warehouse_path: Path) -> None:
@@ -203,9 +203,7 @@ def test_failed_profile_run_is_atomic(tmp_path: Path) -> None:
         profile_raw_sources(warehouse_path, report_path)
 
     with duckdb.connect(str(warehouse_path)) as connection:
-        run = connection.execute(
-            "SELECT status, error_message FROM audit.profile_runs"
-        ).fetchone()
+        run = connection.execute("SELECT status, error_message FROM audit.profile_runs").fetchone()
         stored_results = connection.execute(
             """--sql
             SELECT
@@ -243,9 +241,7 @@ def test_report_compares_with_previous_completed_run(tmp_path: Path) -> None:
 
     with duckdb.connect(str(warehouse_path)) as connection:
         connection.execute("DROP TABLE raw.malformed")
-        connection.execute(
-            "INSERT INTO raw.customers VALUES ('customer-2', 'person-2')"
-        )
+        connection.execute("INSERT INTO raw.customers VALUES ('customer-2', 'person-2')")
 
     profile_raw_sources(warehouse_path, report_path)
 

@@ -2,42 +2,10 @@
 
 import duckdb
 
-from olist.warehouse import quote_identifier
+from common.io.ingestion import quote_identifier
 
 type ColumnsByTable = dict[str, list[tuple[str, str]]]
-
-CANDIDATE_STAGING_TYPES = {
-    ("closed_deals", "won_date"): "TIMESTAMP",
-    ("closed_deals", "has_company"): "BOOLEAN",
-    ("closed_deals", "has_gtin"): "BOOLEAN",
-    ("closed_deals", "declared_product_catalog_size"): "INTEGER",
-    ("closed_deals", "declared_monthly_revenue"): "DECIMAL(18,2)",
-    ("geolocation", "geolocation_lat"): "DOUBLE",
-    ("geolocation", "geolocation_lng"): "DOUBLE",
-    ("marketing_qualified_leads", "first_contact_date"): "DATE",
-    ("order_items", "order_item_id"): "INTEGER",
-    ("order_items", "shipping_limit_date"): "TIMESTAMP",
-    ("order_items", "price"): "DECIMAL(18,2)",
-    ("order_items", "freight_value"): "DECIMAL(18,2)",
-    ("order_payments", "payment_sequential"): "INTEGER",
-    ("order_payments", "payment_installments"): "INTEGER",
-    ("order_payments", "payment_value"): "DECIMAL(18,2)",
-    ("order_reviews", "review_score"): "INTEGER",
-    ("order_reviews", "review_creation_date"): "TIMESTAMP",
-    ("order_reviews", "review_answer_timestamp"): "TIMESTAMP",
-    ("orders", "order_purchase_timestamp"): "TIMESTAMP",
-    ("orders", "order_approved_at"): "TIMESTAMP",
-    ("orders", "order_delivered_carrier_date"): "TIMESTAMP",
-    ("orders", "order_delivered_customer_date"): "TIMESTAMP",
-    ("orders", "order_estimated_delivery_date"): "TIMESTAMP",
-    ("products", "product_name_lenght"): "INTEGER",
-    ("products", "product_description_lenght"): "INTEGER",
-    ("products", "product_photos_qty"): "INTEGER",
-    ("products", "product_weight_g"): "DOUBLE",
-    ("products", "product_length_cm"): "DOUBLE",
-    ("products", "product_height_cm"): "DOUBLE",
-    ("products", "product_width_cm"): "DOUBLE",
-}
+type StagingTypes = dict[tuple[str, str], str]
 
 MAX_DISTINCT_VALUES_FOR_FREQUENCY_PROFILE = 50
 FREQUENCY_PROFILE_LIMIT = 10
@@ -226,6 +194,7 @@ def measure_type_compatibility(
     connection: duckdb.DuckDBPyConnection,
     run_id: str,
     available_columns: ColumnsByTable,
+    staging_types: StagingTypes,
 ) -> None:
     """Measure whether selected raw VARCHAR columns support proposed staging types."""
 
@@ -235,7 +204,7 @@ def measure_type_compatibility(
         for column_name, _ in columns
     }
 
-    for (table_name, column_name), target_type in CANDIDATE_STAGING_TYPES.items():
+    for (table_name, column_name), target_type in staging_types.items():
         if (table_name, column_name) not in available:
             continue
 

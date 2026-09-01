@@ -1,14 +1,12 @@
-"""Define and run Olist-specific source quality checks.
+"""Generic source-quality check types, builders, and runner."""
 
-> Does the raw source contradict an explicit expectation?
-"""
-
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
 import duckdb
 
-from olist.warehouse import quote_identifier
+from common.io.ingestion import quote_identifier
 
 
 class CheckCategory(StrEnum):
@@ -44,10 +42,7 @@ class CheckSpec:
     enforced: bool = True
 
 
-def _not_null(
-    table_name: str,
-    columns: tuple[str, ...],
-) -> CheckSpec:
+def not_null(table_name: str, columns: tuple[str, ...]) -> CheckSpec:
     """Count rows where any selected column is null or blank."""
 
     table = f"raw.{quote_identifier(table_name)}"
@@ -64,11 +59,9 @@ def _not_null(
     )
 
 
-def _unique(
-    table_name: str,
-    columns: tuple[str, ...],
-) -> CheckSpec:
+def unique(table_name: str, columns: tuple[str, ...]) -> CheckSpec:
     """Count extra rows in groups that share the same key."""
+
     table = f"raw.{quote_identifier(table_name)}"
     keys = ", ".join(quote_identifier(column) for column in columns)
     label = "_and_".join(columns)
@@ -92,7 +85,7 @@ def _unique(
     )
 
 
-def _orphan(
+def orphan(
     child_table: str,
     child_column: str,
     parent_table: str,
@@ -101,6 +94,7 @@ def _orphan(
     enforced: bool = True,
 ) -> CheckSpec:
     """Count rows whose non-empty foreign key has no match in the referenced table."""
+
     child = quote_identifier(child_table)
     parent = quote_identifier(parent_table)
     child_key = quote_identifier(child_column)
@@ -134,12 +128,17 @@ def _orphan(
     )
 
 
-def _order_timestamp_order(
+def timestamp_order(
     name: str,
+    table_name: str,
     earlier_column: str,
     later_column: str,
+    *,
+    enforced: bool = True,
 ) -> CheckSpec:
-    """Count order rows where two valid timestamps occur in the wrong order."""
+    """Count rows where two valid timestamps occur in the wrong order."""
+
+    table = f"raw.{quote_identifier(table_name)}"
     earlier = quote_identifier(earlier_column)
     later = quote_identifier(later_column)
     return CheckSpec(
@@ -156,19 +155,21 @@ def _order_timestamp_order(
                     WHERE try_cast({later} AS TIMESTAMP) IS NOT NULL
                       AND try_cast({earlier} AS TIMESTAMP) IS NOT NULL
                 )
-            FROM raw.orders
+            FROM {table}
         """,
-        requirements={("orders", earlier_column), ("orders", later_column)},
+        requirements={(table_name, earlier_column), (table_name, later_column)},
+        enforced=enforced,
     )
 
 
-def _non_negative(
+def non_negative(
     name: str,
     table_name: str,
     columns: tuple[str, ...],
     description: str,
 ) -> CheckSpec:
     """Count rows where any selected value parses as a negative decimal."""
+
     table = f"raw.{quote_identifier(table_name)}"
     predicate = " OR ".join(
         f"try_cast({quote_identifier(column)} AS DECIMAL(18, 2)) < 0" for column in columns
@@ -182,13 +183,14 @@ def _non_negative(
     )
 
 
-def _repeated_values(
+def repeated_values(
     name: str,
     table_name: str,
     column_name: str,
     description: str,
 ) -> CheckSpec:
     """Count extra occurrences of each repeated non-null value."""
+
     table = f"raw.{quote_identifier(table_name)}"
     column = quote_identifier(column_name)
     return CheckSpec(
@@ -213,167 +215,13 @@ def _repeated_values(
     )
 
 
-def _order_payment_reconciliation() -> CheckSpec:
-    """
-    Sum item price, freight, and payments by order, then count matched orders
-    whose totals differ by more than 0.01.
-    """
-    return CheckSpec(
-        name="orders_item_and_payment_value_reconciliation",
-        category=CheckCategory.CONSISTENCY,
-        description=(
-            "Aggregated item price plus freight is compared with payment value per order."
-        ),
-        query="""--sql
-            WITH item_values AS (
-                SELECT
-                    order_id,
-                    sum(try_cast(price AS DECIMAL(18, 2)))
-                    + sum(try_cast(freight_value AS DECIMAL(18, 2))) AS item_value
-                FROM raw.order_items
-                GROUP BY order_id
-            ),
-            payment_values AS (
-                SELECT
-                    order_id,
-                    sum(try_cast(payment_value AS DECIMAL(18, 2))) AS payment_value
-                FROM raw.order_payments
-                GROUP BY order_id
-            )
-            SELECT
-                count(*) FILTER (WHERE abs(item_value - payment_value) > 0.01),
-                count(*)
-            FROM item_values
-            INNER JOIN payment_values USING (order_id)
-        """,
-        requirements={
-            ("order_items", "order_id"),
-            ("order_items", "price"),
-            ("order_items", "freight_value"),
-            ("order_payments", "order_id"),
-            ("order_payments", "payment_value"),
-        },
-        enforced=False,
-    )
-
-
-def _key_checks() -> list[CheckSpec]:
-    """Create completeness and uniqueness checks for each candidate source key."""
-    candidates = [
-        ("customers", ("customer_id",)),
-        ("orders", ("order_id",)),
-        ("products", ("product_id",)),
-        ("sellers", ("seller_id",)),
-        ("marketing_qualified_leads", ("mql_id",)),
-        ("closed_deals", ("mql_id",)),
-        ("order_items", ("order_id", "order_item_id")),
-        ("order_payments", ("order_id", "payment_sequential")),
-        (
-            "product_category_name_translation",
-            ("product_category_name",),
-        ),
-    ]
-    return [
-        check
-        for table_name, columns in candidates
-        for check in (
-            _not_null(table_name, columns),
-            _unique(table_name, columns),
-        )
-    ]
-
-
-CHECKS = [
-    *_key_checks(),
-    _orphan(
-        "orders",
-        "customer_id",
-        "customers",
-        "customer_id",
-    ),
-    _orphan("order_items", "order_id", "orders", "order_id"),
-    _orphan("order_items", "product_id", "products", "product_id"),
-    _orphan("order_items", "seller_id", "sellers", "seller_id"),
-    _orphan("order_payments", "order_id", "orders", "order_id"),
-    _orphan("order_reviews", "order_id", "orders", "order_id"),
-    _orphan(
-        "products",
-        "product_category_name",
-        "product_category_name_translation",
-        "product_category_name",
-        enforced=False,
-    ),
-    _orphan(
-        "closed_deals",
-        "mql_id",
-        "marketing_qualified_leads",
-        "mql_id",
-    ),
-    _orphan(
-        "closed_deals",
-        "seller_id",
-        "sellers",
-        "seller_id",
-        enforced=False,
-    ),
-    _order_timestamp_order(
-        "orders_approval_not_before_purchase",
-        "order_purchase_timestamp",
-        "order_approved_at",
-    ),
-    _order_timestamp_order(
-        "orders_carrier_handoff_not_before_approval",
-        "order_approved_at",
-        "order_delivered_carrier_date",
-    ),
-    _order_timestamp_order(
-        "orders_customer_delivery_not_before_carrier_handoff",
-        "order_delivered_carrier_date",
-        "order_delivered_customer_date",
-    ),
-    _non_negative(
-        "order_items_non_negative_values",
-        "order_items",
-        ("price", "freight_value"),
-        "Item price and freight values should not be negative.",
-    ),
-    _non_negative(
-        "order_payments_non_negative_value",
-        "order_payments",
-        ("payment_value",),
-        "Payment values should not be negative.",
-    ),
-    _order_payment_reconciliation(),
-    _repeated_values(
-        "orders_with_multiple_reviews",
-        "order_reviews",
-        "order_id",
-        "Orders with multiple review rows affect review-to-order joins.",
-    ),
-    _repeated_values(
-        "closed_deals_with_repeated_sellers",
-        "closed_deals",
-        "seller_id",
-        "Repeated sellers in closed deals affect seller-attribution joins.",
-    ),
-    _repeated_values(
-        "customers_with_repeated_unique_ids",
-        "customers",
-        "customer_unique_id",
-        "Repeated customer_unique_id values reveal repeat customer records.",
-    ),
-]
-
-
 def run_checks(
     connection: duckdb.DuckDBPyConnection,
     run_id: str,
     available_columns: dict[str, list[tuple[str, str]]],
+    checks: Sequence[CheckSpec],
 ) -> None:
-    """
-    Run checks whose required columns exist and store their results.
-    Mark checks with missing required columns as skipped.
-    """
+    """Run checks whose required columns exist and store their results."""
 
     available = {
         (table_name, column_name)
@@ -381,7 +229,7 @@ def run_checks(
         for column_name, _ in columns
     }
 
-    for check in CHECKS:
+    for check in checks:
         if not check.requirements.issubset(available):
             connection.execute(
                 """--sql

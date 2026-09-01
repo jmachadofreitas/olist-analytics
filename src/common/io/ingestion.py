@@ -1,64 +1,48 @@
-"""Load unchanged Olist CSV files into DuckDB tables."""
+"""Load CSV files into DuckDB raw tables."""
 
 from dataclasses import dataclass
 from pathlib import Path
 
-from olist.paths import RAW_DATA_DIR, WAREHOUSE_PATH
-from olist.warehouse import connect
-
-SOURCE_TABLES = {
-    "ecommerce/olist_customers_dataset.csv": "customers",
-    "ecommerce/olist_geolocation_dataset.csv": "geolocation",
-    "ecommerce/olist_order_items_dataset.csv": "order_items",
-    "ecommerce/olist_order_payments_dataset.csv": "order_payments",
-    "ecommerce/olist_order_reviews_dataset.csv": "order_reviews",
-    "ecommerce/olist_orders_dataset.csv": "orders",
-    "ecommerce/olist_products_dataset.csv": "products",
-    "ecommerce/olist_sellers_dataset.csv": "sellers",
-    "ecommerce/product_category_name_translation.csv": "product_category_name_translation",
-    "seller-funnel/olist_closed_deals_dataset.csv": "closed_deals",
-    "seller-funnel/olist_marketing_qualified_leads_dataset.csv": "marketing_qualified_leads",
-}
+import duckdb
+from duckdb import DuckDBPyConnection
 
 
-@dataclass(frozen=True)
+@dataclass
 class LoadResult:
     table: str
     rows: int
 
+def connect(warehouse_path: Path, *, read_only: bool = False) -> DuckDBPyConnection:
+    """Create a DuckDB connection to the warehouse file."""
+    if not read_only:
+        warehouse_path.parent.mkdir(parents=True, exist_ok=True)
+    return duckdb.connect(str(warehouse_path), read_only=read_only)
+
+
+def quote_identifier(value: str) -> str:
+    """Quote a table or column name before placing it in generated SQL."""
+    return '"' + value.replace('"', '""') + '"'
+
 
 def _sql_literal(value: str) -> str:
-    """Return a single-quoted SQL literal with embedded quotes escaped.
-
-    Examples:
-    >>> _sql_literal("Smith")
-    "'Smith'"
-
-    >>> _sql_literal("O'Connor")
-    "'O''Connor'"
-    """
-
     return "'" + value.replace("'", "''") + "'"
 
 
-def _source_paths(raw_data_dir: Path) -> dict[Path, str]:
+def load_csv_tables(
+    raw_data_dir: Path,
+    warehouse_path: Path,
+    source_tables: dict[str, str],
+) -> list[LoadResult]:
+    """Replace raw tables from CSVs in one transaction."""
+
     sources = {
-        raw_data_dir / relative_path: table for relative_path, table in SOURCE_TABLES.items()
+        raw_data_dir / relative_path: table for relative_path, table in source_tables.items()
     }
     missing = [path for path in sources if not path.is_file()]
     if missing:
         formatted = "\n".join(f"- {path}" for path in missing)
         raise FileNotFoundError(f"Missing source files:\n{formatted}")
-    return sources
 
-
-def load_raw_data(
-    raw_data_dir: Path = RAW_DATA_DIR,
-    warehouse_path: Path = WAREHOUSE_PATH,
-) -> list[LoadResult]:
-    """Replace all raw tables from their source CSVs in one transaction."""
-
-    sources = _source_paths(raw_data_dir)
     connection = connect(warehouse_path)
     results: list[LoadResult] = []
 

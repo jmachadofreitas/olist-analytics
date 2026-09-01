@@ -1,1 +1,1 @@
-"""Olist analytics project package."""
+"""Olist product package: ingestion, validation, analysis, and charts."""

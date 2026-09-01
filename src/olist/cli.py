@@ -1,9 +1,10 @@
-"""Olist command-line interface."""
+"""Olist command-line aliases for local pipeline steps."""
 
 import typer
 
 from olist.ingestion import load_raw_data
-from olist.profiling import profile_raw_sources
+from olist.publish import publish_delivery_performance
+from olist.validation import profile_raw_sources
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -25,6 +26,14 @@ def profile() -> None:
     typer.echo(f"Tables: {result.table_count}")
     typer.echo(f"Failed checks: {result.failed_check_count}")
     typer.echo(f"Report: {result.report_path}")
+
+
+@app.command()
+def publish() -> None:
+    """Regenerate the static Vega-Lite site from delivery-performance marts."""
+
+    result = publish_delivery_performance()
+    typer.echo(f"Site: {result.site_dir}")
 
 
 def main() -> None:

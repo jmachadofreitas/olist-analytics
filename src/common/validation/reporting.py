@@ -165,11 +165,12 @@ def _render_header(
     run: RunSummary,
     table_count: int,
     check_counts: dict[str, int],
+    title: str,
 ) -> list[str]:
     """Render the report title and run summary."""
 
     return [
-        "# Olist raw-source profile",
+        f"# {title}",
         "",
         f"- Run ID: `{run_id}`",
         f"- Started: `{run[0]}`",
@@ -295,6 +296,8 @@ def render_markdown_report(
     connection: duckdb.DuckDBPyConnection,
     run_id: str,
     report_path: Path,
+    *,
+    title: str = "Raw-source profile",
 ) -> None:
     """Load one profiling run and write its Markdown report."""
 
@@ -305,7 +308,7 @@ def render_markdown_report(
     types = _fetch_type_profiles(connection, run_id)
     missingness = _fetch_missingness_profiles(connection, run_id)
 
-    lines = _render_header(run_id, run, len(tables), check_counts)
+    lines = _render_header(run_id, run, len(tables), check_counts, title)
     lines.extend(_render_table_inventory(tables))
     lines.extend(_render_check_sections(checks))
     lines.extend(_render_type_compatibility(types))

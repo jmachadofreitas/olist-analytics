@@ -1,16 +1,20 @@
 """Coordinate source profiling and persist its audit results."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
 import duckdb
 
-from olist.paths import PROFILING_REPORT_PATH, WAREHOUSE_PATH
-from olist.profiling.checks import run_checks
-from olist.profiling.reporting import render_markdown_report
-from olist.profiling.stats import collect_source_statistics, measure_type_compatibility
-from olist.warehouse import connect
+from common.io.ingestion import connect
+from common.validation.checks import CheckSpec, run_checks
+from common.validation.reporting import render_markdown_report
+from common.validation.stats import (
+    StagingTypes,
+    collect_source_statistics,
+    measure_type_compatibility,
+)
 
 
 @dataclass
@@ -108,8 +112,12 @@ def _ensure_raw_schema(connection: duckdb.DuckDBPyConnection) -> None:
 
 
 def profile_raw_sources(
-    warehouse_path: Path = WAREHOUSE_PATH,
-    report_path: Path = PROFILING_REPORT_PATH,
+    warehouse_path: Path,
+    report_path: Path,
+    *,
+    checks: Sequence[CheckSpec],
+    staging_types: StagingTypes,
+    report_title: str = "Raw-source profile",
 ) -> ProfilingResult:
     """Profile the raw schema and persist a historical audit run."""
 
@@ -136,8 +144,8 @@ def profile_raw_sources(
 
         connection.execute("BEGIN TRANSACTION")
         columns = collect_source_statistics(connection, run_id)
-        measure_type_compatibility(connection, run_id, columns)
-        run_checks(connection, run_id, columns)
+        measure_type_compatibility(connection, run_id, columns, staging_types)
+        run_checks(connection, run_id, columns, checks)
         connection.execute("COMMIT")
 
         connection.execute(
@@ -148,7 +156,7 @@ def profile_raw_sources(
             """,
             [run_id],
         )
-        render_markdown_report(connection, run_id, report_path)
+        render_markdown_report(connection, run_id, report_path, title=report_title)
 
         table_count = connection.execute(
             "SELECT count(*) FROM audit.table_profiles WHERE run_id = ?",

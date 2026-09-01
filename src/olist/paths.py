@@ -1,8 +1,20 @@
-"""Project paths used by local ingestion and analytical storage."""
+"""Olist checkout paths.
 
+This module lives at ``src/olist/paths.py``. The default root is two parents
+above that file. Set ``OLIST_PROJECT_ROOT`` when the process is not running
+from this layout (tests, a copied tree). ``common`` does not locate the repo.
+"""
+
+import os
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-RAW_DATA_DIR = PROJECT_ROOT / "data" / "raw"
-WAREHOUSE_PATH = PROJECT_ROOT / "data" / "warehouse" / "olist.duckdb"
-PROFILING_REPORT_PATH = PROJECT_ROOT / "reports" / "source-profile.md"
+
+
+def project_root() -> Path:
+    configured = os.environ.get("OLIST_PROJECT_ROOT")
+    if configured:
+        return Path(configured).expanduser().resolve()
+    return Path(__file__).resolve().parents[2]
+
+
+WAREHOUSE_PATH = project_root() / "data" / "warehouse" / "olist.duckdb"
